@@ -33,20 +33,24 @@ var CommandlineArguments = os.Args[1:]
 // ShowHelp --
 func ShowHelp() {
 	fmt.Println(`
-  Options:
---input=            -i  Input mode <s3,file,stdin>
+    Usage: JSONTrafficker --input=<source> --kinesis-stream=<stream name>
+    Options:
+    --input=            -i  Input mode <s3,file,stdin>
                         s3://BucketName/Key
                         /tmp/logs.json
-						stdin|-
+                        stdin|-
 
---kinesis-stream=   -k  Target kinesis stream name  
---region=           -r	AWS region <us-west-2>
---help=            -h    Display this help and exit
+   --kinesis-stream=   -k  Target kinesis stream name  
+   --region=           -r	AWS region <us-west-2>
+   --help=             -h  Display this help and exit
 
-Examples:
+   Examples:
 
-flight -i
-\t`)
+   JSONTrafficker -i=s3://MylogsBucket/logdata.json -k security-logs
+
+   JSONTrafficker -i=/tmp/logdata.json -k security-logs
+
+   cat /tmp/logdata | JSONTrafficker -i=stdin`)
 }
 
 // JSONToKinesisBatch --
@@ -201,5 +205,7 @@ func main() {
 			Counter++
 			Position++
 		}
+	} else {
+		ShowHelp()
 	}
 }
