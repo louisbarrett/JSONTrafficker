@@ -27,30 +27,47 @@ var KinesisRecords []*kinesis.PutRecordsRequestEntry
 var AWSRegion = "us-west-2"
 
 // CommandlineArguments --
-// var CommandlineArguments = os.Args[1:][0]
 var CommandlineArguments = os.Args[1:]
 
 // ShowHelp --
 func ShowHelp() {
 	fmt.Println(`
+	
+	.--------------.
+	|~            ~|
+	|H____JSON____H|
+	|.------------.|
+	||::..     __ ||
+	|'--------'--''|
+	| '. ______ .' |
+	| _ |======| _ |
+	|(_)|======|(_)|
+	|___|======|___|
+	[______________]
+	|##|        |##|
+        '""'        '""'
+
     Usage: JSONTrafficker --input=<source> --kinesis-stream=<stream name>
+   
     Options:
-    --input=            -i  Input mode <s3,file,stdin>
-                        s3://BucketName/Key
-                        /tmp/logs.json
-                        stdin|-
+    --input=           -i  Input mode <s3,file,stdin>
+                           s3://BucketName/Key
+                           /tmp/logs.json
+                           stdin|-
 
    --kinesis-stream=   -k  Target kinesis stream name  
-   --region=           -r	AWS region <us-west-2>
+   --region=           -r  AWS region <us-west-2>
    --help=             -h  Display this help and exit
 
    Examples:
 
-   JSONTrafficker -i=s3://MylogsBucket/logdata.json -k security-logs
+   JSONTrafficker -i=s3://MyLogsBucket/logdata.json -k security-logs
 
    JSONTrafficker -i=/tmp/logdata.json -k security-logs
 
-   cat /tmp/logdata | JSONTrafficker -i=stdin`)
+   cat /tmp/logdata | JSONTrafficker -i=stdin
+ 
+   `)
 }
 
 // JSONToKinesisBatch --
@@ -59,7 +76,6 @@ func JSONToKinesisBatch(Records [][]byte, KinesisDataStreamName string) {
 	if (len(Records)) == 0 || (len(Records)) > 500 {
 		log.Fatal("Invalid record count")
 	}
-	// if len(Records) <= 500 {
 	for n := range Records {
 		ParsedJSON, err := gabs.ParseJSON(Records[n])
 		if err != nil {
@@ -86,8 +102,6 @@ func JSONToKinesisBatch(Records [][]byte, KinesisDataStreamName string) {
 		log.Println("Record delivery complete")
 
 	}
-
-	// }
 	KinesisRecords = nil
 }
 
@@ -98,7 +112,7 @@ func main() {
 	var TestDataSet [][]byte
 
 	if len(CommandlineArguments) > 0 {
-		KinesisStreamNameArg := regexp.MustCompile("--kinesis-stream|-ks")
+		KinesisStreamNameArg := regexp.MustCompile("--kinesis-stream|-k")
 		AWSRegionArg := regexp.MustCompile("--region|-r")
 		HelpArg := regexp.MustCompile("--help|-h")
 		InputArg := regexp.MustCompile("--input|-i")
@@ -108,7 +122,6 @@ func main() {
 			switch {
 			case KinesisStreamNameArg.Match(ArgBytes):
 				KinesisStreamName = strings.Split(Arg, "=")[1]
-				fmt.Println(KinesisStreamName)
 			case HelpArg.Match(ArgBytes):
 				ShowHelp()
 				os.Exit(0)
@@ -116,7 +129,6 @@ func main() {
 				AWSRegion = string(ArgBytes)
 			case InputArg.Match(ArgBytes):
 				// Grab bytes from file
-				fmt.Println(string(ArgBytes))
 				InputMode := strings.Split(Arg, "=")[1]
 				varStdin := regexp.MustCompile("stdin")
 				varS3Bucket := regexp.MustCompile("s3|S3")
@@ -169,7 +181,6 @@ func main() {
 					if err != nil {
 						log.Fatal("Could not open file")
 					}
-					// JSONContainer = JSONContainer.Search("Records")
 				}
 			}
 		}
