@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -105,17 +107,35 @@ func JSONToKinesisBatch(Records [][]byte, KinesisDataStreamName string) {
 	KinesisRecords = nil
 }
 
+// gUnzip
+func gUnzip(data []byte) (resData []byte, err error) {
+	b := bytes.NewBuffer(data)
+	var r io.Reader
+	r, err = gzip.NewReader(b)
+	if err != nil {
+		return
+	}
+	var resB bytes.Buffer
+	_, err = resB.ReadFrom(r)
+	if err != nil {
+		return
+	}
+	resData = resB.Bytes()
+	return
+}
+
 func main() {
 	var JSONContainer *gabs.Container
 	var KinesisStreamName string
 	var output []rune
 	var TestDataSet [][]byte
-
 	if len(CommandlineArguments) > 0 {
+
 		KinesisStreamNameArg := regexp.MustCompile("--kinesis-stream|-k")
 		AWSRegionArg := regexp.MustCompile("--region|-r")
 		HelpArg := regexp.MustCompile("--help|-h")
 		InputArg := regexp.MustCompile("--input|-i")
+
 		for i := range CommandlineArguments {
 			ArgBytes := []byte(CommandlineArguments[i])
 			Arg := CommandlineArguments[i]
@@ -162,6 +182,9 @@ func main() {
 					S3Object = strings.Replace(S3Object, "s3://", "", -1)
 					BucketName := strings.SplitN(S3Object, "/", 2)[0]
 					FileName := "/" + strings.SplitN(S3Object, "/", 2)[1]
+					// Check for compression
+					GZCheck := regexp.MustCompile("\\.gz$")
+
 					sess := session.New()
 					S3Client := s3.New(sess)
 					S3InputObject := s3.GetObjectInput{
@@ -173,7 +196,13 @@ func main() {
 					if err != nil {
 						log.Fatal("An error occured when attempting to retrieve ", err, BucketName, FileName)
 					}
-					LogContents, err := ioutil.ReadAll(LogObject.Body)
+					var LogContents []byte
+					if GZCheck.Match([]byte(FileName)) {
+						LogContents, err = ioutil.ReadAll(LogObject.Body)
+						LogContents, err = gUnzip(LogContents)
+					} else {
+						LogContents, err = ioutil.ReadAll(LogObject.Body)
+					}
 					if err != nil {
 						log.Fatal("An error occured when attempting to read", err, BucketName, FileName)
 					}
