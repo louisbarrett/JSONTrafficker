@@ -213,7 +213,7 @@ func main() {
 				}
 			}
 		}
-		Children := JSONContainer.Children()
+		Children, err := JSONContainer.Children()
 		if err != nil {
 			fmt.Println(JSONContainer.String())
 			log.Fatal("Cannot parse JSON ", err)
